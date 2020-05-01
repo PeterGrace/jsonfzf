@@ -1,0 +1,30 @@
+#!/bin/bash 
+set -eo pipefail
+
+function cleanup() {
+    set +u
+    if [[ -d "${TMPDIR}" ]];
+    then
+        rm -r "${TMPDIR}"
+    fi
+}
+trap cleanup QUIT INT KILL TERM 0
+
+if [[ -z "$1" ]];
+then
+    echo "specify path to json file, or - for stdin."
+    exit 1
+fi
+set -u
+
+if [[ $1 == "-" ]]
+then
+    TMPDIR=$(mktemp -d)
+    JSONFILE=$TMPDIR/sourcejson
+    dd if=/dev/stdin of="${JSONFILE}"
+else
+    JSONFILE=$1
+fi
+
+jq -rc paths "$JSONFILE" | fzf --preview "jq getpath\({}\) \"$JSONFILE\""
+
